@@ -1,2 +1,2 @@
 # udemy-tensorflow
-Predicts mile per gallon based on vehicle specs. Uses linear regression
+Covers: linear regression, logistic regression, multinominal logistic regression
