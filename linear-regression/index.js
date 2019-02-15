@@ -1,10 +1,10 @@
 require('@tensorflow/tfjs-node');
 const tf = require('@tensorflow/tfjs');
-const loadCSV = require('./load-csv');
+const loadCSV = require('../load-csv');
 const LinearRegression = require('./linear-regression');
 const plot = require('node-remote-plot');
 
-let { features, labels, testFeatures, testLabels } = loadCSV('./cars.csv', {
+let { features, labels, testFeatures, testLabels } = loadCSV('../data/cars.csv', {
     shuffle: true, // shuffle dataset
     splitTest: 50, // record to split for testing
     dataColumns: ['horsepower', 'weight', 'displacement'], // data columns to use for calculation accuracy
