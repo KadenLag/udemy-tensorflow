@@ -5,6 +5,7 @@ class LinearRegression {
     constructor(features, labels, options) {
         this.features = this.processFeatures(features);
         this.labels = tf.tensor(labels);
+        this.mseHistory = []; // mean squared error
 
         this.options = Object.assign({
             learningRate: 0.1,
@@ -14,22 +15,47 @@ class LinearRegression {
         this.weights = tf.zeros([this.features.shape[1], 1]);
     }
 
-    gradientDescent() {
-        const currentGuesses = this.features.matMul(this.weights);
-        const differences = currentGuesses.sub(this.labels);
+    gradientDescent(features, labels) {
+        const currentGuesses = features.matMul(this.weights);
+        const differences = currentGuesses.sub(labels);
 
-        const slopes = this.features
+        const slopes = features
             .transpose()
             .matMul(differences)
-            .div(this.features.shape[0]); // divide by number of rows
+            .div(features.shape[0]); // divide by number of rows
 
         this.weights = this.weights.sub(slopes.mul(this.options.learningRate));
     }
 
     train() {
+        const batchQuantity = Math.floor(
+            this.features.shape[0] / this.options.batchSize
+        );
+
         for (let i = 0; i < this.options.iterations; i++) {
-            this.gradientDescent();
+            for (let j = 0; j < batchQuantity; j++) {
+                const startIndex = j * this.options.batchSize;
+                const { batchSize } = this.options;
+
+                const featureSlice = this.features.slice(
+                    [startIndex, 0],
+                    [batchSize, -1]
+                );
+                const labelSlice = this.labels.slice(
+                    [startIndex, 0],
+                    [batchSize, -1]
+                );
+
+                this.gradientDescent(featureSlice, labelSlice);
+            }
+
+            this.recordMSE(); // record learning rate values for training
+            this.updateLearningRate();
         }
+    }
+
+    predict(observations) {
+        return this.processFeatures(observations).matMul(this.weights); // format them
     }
 
     test(testFeatures, testLabels) {
@@ -77,6 +103,30 @@ class LinearRegression {
         features = features.sub(mean).div(variance.pow(0.5).add(1e-7));
 
         return features;
+    }
+
+    recordMSE() {
+        const mse = this.features
+            .matMul(this.weights)
+            .sub(this.labels)
+            .pow(2)
+            .sum()
+            .div(this.features.shape[0])
+            .get();
+
+        this.mseHistory.unshift(mse);
+    }
+
+    updateLearningRate() {
+        if (this.mseHistory.length < 2) {
+            return; // not enough records
+        }
+
+        if (this.mseHistory[0] > this.mseHistory[1]) {
+            this.options.learningRate /= 2;
+        } else {
+            this.options.learningRate *= 1.05;
+        }
     }
 }
 
